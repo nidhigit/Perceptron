@@ -1,49 +1,35 @@
-
-
+//this program finds the weight vector with best hyper param that came from Perceptron_stnd program (based on Cross validation).
 import java.util.*; 
 
 import java.io.*;
 import java.util.*;
 import java.nio.*;
-public class Perceptron_stnd {
+public class TrainingSet {
 	
 	
  	public static void main(String args[])
 	{
+ 		Data data[]=new Data[1000];
+ 		Double w[] = new Double[20];  
  		
- 		String sequence = "00";
- 		String CVsplitSeq[]= {"00","01","02","03","04"};
+ 		int index=-1;
+		File file = new File("C:\\Machine Learning\\hw2\\dataset\\diabetes.train");
+		 try {
+		      FileInputStream fis = new FileInputStream(file);
+		      BufferedReader df    = new BufferedReader(new InputStreamReader(fis));
+		      String line;
+	//	      HashMap <String,List> attribute_ValueSet = new HashMap();
  		
-  		//run for all five combinations of cross validation slipts
- 		for(int crossValidationIndex=0;crossValidationIndex<5;crossValidationIndex++)
- 		{
- 			Data data[]=new Data[6000];
- 	 		 
- 	 		
-  	 		
- 	 		int index=-1;
-
- 			String testFileName = "C:\\Machine Learning\\hw2\\dataset\\CVSplits\\" + "training" + CVsplitSeq[crossValidationIndex] + ".data";
- 			for(int fileIndex=0;fileIndex<5;fileIndex++)
- 			{
- 				//club all other 4 files into one -
- 				if(fileIndex!=crossValidationIndex)
- 				{
- 				File file = new File("C:\\Machine Learning\\hw2\\dataset\\CVSplits\\" + "training" + CVsplitSeq[fileIndex] + ".data");
- 				try {
- 					FileInputStream fis = new FileInputStream(file);
- 					BufferedReader df    = new BufferedReader(new InputStreamReader(fis));
- 					String line;
- 
- 					int y = 0 ;
- 					HashMap<Integer, Double> x;
+	//	      String labels_in_sample[]=new String[7000];
+		      int y = 0 ;
+		      HashMap<Integer, Double> x;
 		   
 		      
- 					// read the training set and create a  Dataset
+		      // read the training set and create a Dataset
 		      
- 					while ((line = df.readLine())!=null){
+		      	while ((line = df.readLine())!=null){
  		      			String[] result = line.split("\\ ");
- 		      			x = new HashMap<Integer, Double>();
+ 		 		       x = new HashMap<Integer, Double>();
 
 		      				for (int i=0; i<result.length; i++) {
 		      						
@@ -61,95 +47,47 @@ public class Perceptron_stnd {
 		      						}
 		      				}
 		      			data[++index] = new Data(x,y);	
- 					}
- 					df.close();
+	 		    }
+		      	df.close();
 
- 				}	catch (IOException err) {
- 						err.printStackTrace();
- 					}
- 			}
- 		}
- 			System.out.println("Training_" + CVsplitSeq[crossValidationIndex] + " as Testdata");
-	 	double bestLearningRate = runSimplePerceptron(data,index,testFileName);
-		 	
-		runDecayingRatePerceptron(data,index,testFileName);
-
- 			runMarginPerceptron(data,index,testFileName);
- 			
- 			runAveragePerceptron(data,index,testFileName);
- 			runAgressiveMarginPerceptron(data,index,testFileName);
-	  }
+ 		   }	catch (IOException err) {
+ 			   		err.printStackTrace();
+		    	}
+		 
+		 	runSimplePerceptron(data,index,(double)(1.0));
+		 	runDecayingRatePerceptron(data,index,(double)(1.0));
+		 	runMarginPerceptron(data,index,(double)(1.0),(double)(0.01));
+		 	runAveragePerceptron(data,index,(double)(0.1));
+		 	runAgressiveMarginPerceptron(data,index,(double)(0.01));
 	}
  	
- 	public static Double[] learnSimplePerceptron(Data data1[],int index,double LearningRate,Double w[])
- 	{
- 		//Double w[] = new Double[20];  
- 	/*	Double min =-0.01;  //  Set To Your Desired Min Value
-	    Double max = 0.01;
- 		double smallRandNumber = min + new Random().nextDouble() * (max - min); 
- 		Arrays.fill(w, smallRandNumber);*/
- 		
- 		Data data[] = Arrays.copyOf(data1,index);
- 		
- 		//shuffle the data..
- 	 	ArrayList<Data> arrayList = new ArrayList<Data>(Arrays.asList(Arrays.copyOf(data,index))); 
- 		Collections.shuffle(arrayList);
- 		data = arrayList.toArray(new Data[arrayList.size()]);
- 		for(int i=0;i<index;i++)
- 		{
- 			double trueLabel;
- 			double predictedLabel;
- 			double dotProduct_wT_x = 0.0f;
- 			HashMap<Integer, Double> x = new HashMap<Integer, Double>();
- 		 
- 			trueLabel = data[i].getY();
- 			x= data[i].getX();
- 			
- 			//wT*x (contains bias)
- 			for (Map.Entry<Integer, Double> entry : x.entrySet()) {
- 				dotProduct_wT_x = dotProduct_wT_x +  w[entry.getKey()] * entry.getValue();
- 			}
- 			
- 			//predict the label
- 			if(dotProduct_wT_x < 0)
- 				predictedLabel = -1;
- 			else	
- 				predictedLabel = +1;
- 			
- 			//check if prediction is correct, if not update the weight vector and bias.
- 			if(predictedLabel != trueLabel)
- 		//	if(dotProduct_wT_x<0)
- 			{
- 				//update bias
- 				w[0]=w[0]+trueLabel*LearningRate;
- 				
- 				//update all other weights
-
- 				for(int j=1;j<w.length;j++)
- 				{
- 					if(x.containsKey(j))
- 							w[j]=w[j]+LearningRate*trueLabel*x.get(j);
- 				//	else
- 			//			w[j]=(double)0;
- 				}
- 			}
- 			
- 		}
-  		return w;
- 	}
- 	
- 	
- 	public static Double[] learnDecayingPerceptron(Data data1[],int index,double LearningRate,int decreaseRate, Double w[])
+ 	public static Double[] learnSimplePerceptron(Data data1[],int index,double LearningRate, Double w[])
  	{
  		 
  		
  		Data data[] = Arrays.copyOf(data1,index);
  		
+ 		//define rate of change and pick one randomly
+ //		double LearningRates[] = {1, 0.1, 0.01};
+ //		int minInt =0;  //  Set To Your Desired Min Value
+//	    int maxInt =2;
+// 		Random rand = new Random();
+ 		
+// 	 	int randomNum = rand.nextInt((maxInt - minInt) + 1) + minInt;
+ 	
+ 	// 	double LearningRate = LearningRates[randomNum];
+ 	//	double LearningRate = (double)0.1;
+ 		//check the sign, if -ve then update vector 'w' and bias 'b' as needed.
+ 	//	int k=0;
+ 	//	int seed=2500;
+ 	//	while(k++<seed)
+ 		
+ 		
  		//shuffle the data..
  	 	ArrayList<Data> arrayList = new ArrayList<Data>(Arrays.asList(Arrays.copyOf(data,index))); 
  		Collections.shuffle(arrayList);
  		data = arrayList.toArray(new Data[arrayList.size()]);
- 	  		
+ 	  	int totalUpdates = 0;	
  		for(int i=0;i<index;i++)
  		{
  			
@@ -160,10 +98,70 @@ public class Perceptron_stnd {
  	 		
  	 //	 	i = rand1.nextInt((maxInt1 - minInt1) + 1) + minInt;
  			
+ 			double trueLabel;
+ 			double predictedLabel;
+ 			double dotProduct_wT_x = 0.0f;
+ 			HashMap<Integer, Double> x = new HashMap<Integer, Double>();
+ 		 
+ 			trueLabel = data[i].getY();
+ 			x= data[i].getX();
+ 			
+ 			//wT*x (contains bias)
+ 			for (Map.Entry<Integer, Double> entry : x.entrySet()) {
+ 				dotProduct_wT_x = dotProduct_wT_x +  w[entry.getKey()] * entry.getValue();
+ 			}
+ 			
+ 			//predict the label
+ 			if(dotProduct_wT_x < 0)
+ 				predictedLabel = -1;
+ 			else	
+ 				predictedLabel = +1;
+ 			
+ 			//check if prediction is correct, if not update the weight vector and bias.
+ 			if(predictedLabel != trueLabel)
+ 		//	if(dotProduct_wT_x<0)
+ 			{
+ 				//update bias
+ 				totalUpdates = totalUpdates + 1;
+ 				w[0]=w[0]+trueLabel*LearningRate;
+ 				
+ 				//update all other weights
+
+ 				for(int j=1;j<w.length;j++)
+ 				{
+ 					if(x.containsKey(j))
+ 							w[j]=w[j]+LearningRate*trueLabel*x.get(j);
+ 				//	else
+ 			//			w[j]=(double)0;
+ 				}
+ 			}
+ 			
+ 		}
+ 		System.out.println("   Total Learning Updates on TrainingSet for Simple Perceptron: " + totalUpdates);
+ 		return w;
+ 	}
+ 	
+ 	
+ 	public static Double[] learnDecayingPerceptron(Data data1[],int index,double LearningRate,int decreaseRate, Double w[])
+ 	{
+ 		
+ 		Data data[] = Arrays.copyOf(data1,index);
+ 			
+ 		
+ 		//shuffle the data..
+ 	 	ArrayList<Data> arrayList = new ArrayList<Data>(Arrays.asList(Arrays.copyOf(data,index))); 
+ 		Collections.shuffle(arrayList);
+ 		data = arrayList.toArray(new Data[arrayList.size()]);
+ 	  	int totalUpdates = 0;	
+
+ 		for(int i=0;i<index;i++)
+ 		{
+ 			
+  
+ 			
  			//Decaying the learning rate
  			LearningRate = LearningRate/(1+decreaseRate);
- 			decreaseRate++;
- 			
+  			
  			double trueLabel;
  			double predictedLabel;
  			double dotProduct_wT_x = 0.0f;
@@ -189,7 +187,8 @@ public class Perceptron_stnd {
  			{
  				//update bias
  				w[0]=w[0]+trueLabel*LearningRate;
- 				
+ 				totalUpdates = totalUpdates + 1;
+
  				//update all other weights
 
  				for(int j=1;j<w.length;j++)
@@ -202,17 +201,18 @@ public class Perceptron_stnd {
  			}
  			
  		}
- 
+ 		System.out.println("   Total Learning Updates in TrainingSet for Decay Learning Perceptron: " + totalUpdates);
+
  		return w;
  	}
  	
  	
- 	public static Double testTestFile(Double w[], String testFileName)
+ 	public static Double testTest(Double w[])
  	{
  		Data data[]=new Data[1000];
  		int index=-1;
-		File file = new File(testFileName);
-		 try {
+		File file = new File("C:\\Machine Learning\\hw2\\dataset\\diabetes.test");
+ 		 try {
 		      FileInputStream fis = new FileInputStream(file);
 		      BufferedReader df    = new BufferedReader(new InputStreamReader(fis));
 		      String line;
@@ -241,9 +241,13 @@ public class Perceptron_stnd {
 		      							Double value = Double.valueOf(result1[1]);
 		      							x.put(key,value);	
 		      						}
+		      				
 		      				}
+		      				
+		      
 		      			data[++index] = new Data(x,y);	
 	 		    }
+		      
 		      	df.close();
 			      
 				 //     	
@@ -254,16 +258,16 @@ public class Perceptron_stnd {
 		 		   }	catch (IOException err) {
 		 			   		err.printStackTrace();
 				    	}
-			return testAlgorithm(data,index,w);
+			return test(data,index,w);
 
  	}
  	
- /*	public static Double testDev(Double w[])
+ 	public static Double testDev(Double w[])
  	{
  		Data data[]=new Data[1000];
  		int index=-1;
 		File file = new File("C:\\Machine Learning\\hw2\\dataset\\diabetes.dev");
-		 try {
+ 		 try {
 		      FileInputStream fis = new FileInputStream(file);
 		      BufferedReader df    = new BufferedReader(new InputStreamReader(fis));
 		      String line;
@@ -293,8 +297,11 @@ public class Perceptron_stnd {
 		      							x.put(key,value);	
 		      						}
 		      				}
+		      				
+		      			 
 		      			data[++index] = new Data(x,y);	
 	 		    }
+		   
 		      	df.close();
 			      
 				 //     	
@@ -307,9 +314,9 @@ public class Perceptron_stnd {
 				    	}
 			return test(data,index,w);
 
- 	} */
+ 	}
  	
- 	public static Double testAlgorithm(Data data[],int index, Double w[])
+ 	public static Double test(Data data[],int index, Double w[])
  	{
  		int correct=0;
  		int incorrect=0;
@@ -325,7 +332,7 @@ public class Perceptron_stnd {
  			x= data[i].getX();
  			
  			//wT*x (contains bias)
-  			for (Map.Entry<Integer, Double> entry : x.entrySet()) {
+ 			for (Map.Entry<Integer, Double> entry : x.entrySet()) {
  				dotProduct_wT_x = dotProduct_wT_x +  w[entry.getKey()] * entry.getValue();
  			}
  			
@@ -347,39 +354,34 @@ public class Perceptron_stnd {
  		
   	}
  	
-public static double runSimplePerceptron(Data[] data, int index,String testFileName)
+public static void runSimplePerceptron(Data[] data, int index, double LearningRate)
 {
 	 
-	 double LearningRates[] = {1, 0.1, 0.01};
-		HashMap<Double, Double> bestLearningRates = new HashMap<Double,Double>();
-	 
+	/* double LearningRates[] = {1, 0.1, 0.01};
+		int minInt =0;  //  Set To Your Desired Min Value
+	    int maxInt =2;
+		Random rand = new Random();
 		
-	//	int minInt =0;  //  Set To Your Desired Min Value
-	 //   int maxInt =2;
-	//	Random rand = new Random();
-		
-	// 	int randomNum = rand.nextInt((maxInt - minInt) + 1) + minInt;
+	 	int randomNum = rand.nextInt((maxInt - minInt) + 1) + minInt;
 	
-	 	double LearningRate; 
-	 	
-for(int i=0;i<LearningRates.length;i++)
-{
+	 	double LearningRate = LearningRates[randomNum];*/
+	
+	System.out.println(" *** Simple Perceptron ***");
+	System.out.println(" ");
+
 	Double w[] = new Double[20];
+	Double bestW[] = new Double[20];
+
 	Double min =-0.01;  //  Set To Your Desired Min Value
     Double max = 0.01;
 		double smallRandNumber = min + new Random().nextDouble() * (max - min); 
 		Arrays.fill(w, smallRandNumber);
-		
-		
-	 LearningRate = LearningRates[i];
-	 double testAccuracyTotal = (double)0;
-	 int noOfEpochs= 10;
- //** 	 System.out.println("       Learning Rate: " + LearningRate);
- 
+	 double tempAccuracy=0;	
+ 	 double devAccuracyTotal = (double)0;
+	 int noOfEpochs= 20;
 	 for(int epoch=0;epoch<noOfEpochs;epoch++)
 	 {
 	      	w = learnSimplePerceptron(data,index,LearningRate,w);
-	 }
 	  //    	for(int i=0;i<w.length;i++)
 	  //    			System.out.println(w[i]);
 // print data     	
@@ -387,167 +389,165 @@ for(int i=0;i<LearningRates.length;i++)
 //	      System.out.println(""+entry.getKey() + " " + entry.getValue());
 //		      	}
 	    	      	
-     	double testAccuracy = testTestFile(w,testFileName);
-     	
-    // 	testAccuracyTotal = testAccuracyTotal + testAccuracy;
-  //***   	System.out.println("           Epoch_" + epoch +" Test Accuracy for Simple Learning Rate " + LearningRate + " is " + testAccuracy);
+     	double devAccuracy = testDev(w);
+     	//store best weight to use on Test data.
+     	if(devAccuracy>tempAccuracy)
+     	{
+     		bestW = w;
+     		tempAccuracy = devAccuracy;
+     	}
+     	devAccuracyTotal = devAccuracyTotal + devAccuracy;
+     	System.out.println("   Epoch" + epoch +" Dev Accuracy for Simple Learning Rate " + LearningRate + " is " + devAccuracy);
+	 }
 	 
-	 
-	// double Average = testAccuracyTotal/noOfEpochs;
-	 bestLearningRates.put(LearningRates[i],testAccuracy);
+	 System.out.println("      ** Average Dev Accuracy for Simple Learning Rate " + LearningRate + " is " + devAccuracyTotal/noOfEpochs);
+//	 System.out.println(" ");
 
-	 System.out.println("       ** Test Accuracy for Simple Learning Rate " + LearningRate + " is " + testAccuracy);
-	 System.out.println(" ");
-}
 
-//return best Learning Rate
-	double bestLearningRate = 0;
-	double bestLearningRateAccuracy = 0;
-
-for (Map.Entry<Double, Double> entry : bestLearningRates.entrySet()) {
-		if(entry.getValue() > bestLearningRateAccuracy)
-		{
-			bestLearningRate=entry.getKey();
-			bestLearningRateAccuracy = entry.getValue();
-		}
-	}
-	return bestLearningRate;
-
-//	double testAccuracy = testTest(w,testFileName);
- // 	System.out.println("test Accuracy" + testAccuracy);
+	double testAccuracy = testTest(bestW);
+	System.out.println("      Test Accuracy - Simple Perceptron   :" + testAccuracy);
 }
 
  	
 // Decaying the learning rate
 	
-public static void runMarginPerceptron(Data[] data, int index,String testFileName)
+public static void runDecayingRatePerceptron(Data[] data, int index, double LearningRate)
 {
  int t=0;
- double LearningRates[] = {1, 0.1, 0.01};
- double Margins[] = {1, 0.1, 0.01};
+	Double w[] = new Double[20];
+	Double bestW[] = new Double[20];
+	System.out.println(" ");
+	System.out.println(" ");
 
+	System.out.println(" *** Decaying Rate Perceptron ***");
+	System.out.println(" ");
+
+
+   /*double LearningRates[] = {1, 0.1, 0.01};
 	int minInt =0;  //  Set To Your Desired Min Value
     int maxInt =2;
 	Random rand = new Random();
 	
  	int randomNum = rand.nextInt((maxInt - minInt) + 1) + minInt;
 
- 	double LearningRate = LearningRates[randomNum];
- 	
-for(int m=0;m<LearningRates.length;m++)
-{
-   for(int i=0;i<LearningRates.length;i++)
-    {
-	   LearningRate = LearningRates[i];
-		 double devAccuracyTotal = (double)0;
-		 int noOfEpochs= 20;
-		 int decreaseRate = 0;
-		 
-   		 Double w[] = new Double[20];
-		 Double min =-0.01;  //  Set To Your Desired Min Value
-	     Double max = 0.01;
-	 		double smallRandNumber = min + new Random().nextDouble() * (max - min); 
-			Arrays.fill(w, smallRandNumber);
-			
-		 for(int epoch=0;epoch<noOfEpochs;epoch++)
-		 {
-			 	w = learnMarginPerceptron(data,index,LearningRate,decreaseRate,w,Margins[m]);
-			 	decreaseRate = decreaseRate + index;
+ 	double LearningRate = LearningRates[randomNum];*/
+	
+	Double min =-0.01;  //  Set To Your Desired Min Value
+    Double max = 0.01;
+		double smallRandNumber = min + new Random().nextDouble() * (max - min); 
+		Arrays.fill(w, smallRandNumber);
+
 		
-		 }
-		//CVSplit test
- 	double cvAccuracy = testTestFile(w,testFileName);
+ 	double tempAccuracy=0;	
  	
-//  	System.out.println("Epoch" + epoch +" Dev Accuracy for Decaying Learning Rate " + LearningRate + " is " + cvAccuracy);
+//for(int i=0;i<LearningRates.length;i++)
+//{
+ //LearningRate = LearningRates[i];
+ double devAccuracyTotal = (double)0;
+ int noOfEpochs= 20;
+ int decreaseRate = 0;
+ for(int epoch=0;epoch<noOfEpochs;epoch++)
+ {
+	 	w = learnDecayingPerceptron(data,index,LearningRate,decreaseRate,w);
  
- 
- 	System.out.println("       ** Cv Accuracy for Margin Rate" + Margins[m] + " Learning Rate " + LearningRate + " is " + cvAccuracy);
- 	System.out.println(" ");
+    	      	
+	//keep decreaseRate increasing across epochs, by increasing 1 for each example.
+	// 	decreaseRate = decreaseRate + index;
+			decreaseRate = decreaseRate + 1;
+
+ 	double devAccuracy = testDev(w);
+  	//store best weight to use on Test data.
+ 	if(devAccuracy>tempAccuracy)
+ 	{
+ 		bestW = w;
+ 		tempAccuracy = devAccuracy;
+ 	}
+ 	
+ 	devAccuracyTotal = devAccuracyTotal + devAccuracy;
+ 	System.out.println(   "Epoch" + epoch +" Dev Accuracy for Decaying Learning Rate " + LearningRate + " is " + devAccuracy);
  }
-}
-//double testAccuracy = testTestFile(w,testFileName);
-	//System.out.println("test Accuracy" + testAccuracy);
+ 
+ System.out.println("      ** Average Dev Accuracy for Decaying Learning Rate " + LearningRate + " is " + devAccuracyTotal/noOfEpochs);
+ System.out.println(" ");
+//}
+
+double testAccuracy = testTest(bestW);
+System.out.println("      Test Accuracy - Decaying Rate   :" + testAccuracy);
 }
 
 //Decaying the learning rate
 
-public static void runDecayingRatePerceptron(Data[] data, int index,String testFileName)
+public static void runMarginPerceptron(Data[] data, int index, double LearningRate, double Margin)
 {
 int t=0;
-double LearningRates[] = {1, 0.1, 0.01};
-	int minInt =0;  //  Set To Your Desired Min Value
- int maxInt =2;
-	Random rand = new Random();
-	
-	int randomNum = rand.nextInt((maxInt - minInt) + 1) + minInt;
+	Double w[] = new Double[20];
+	Double bestW[] = new Double[20];
+	System.out.println(" ");
+	System.out.println(" ");
 
-	double LearningRate = LearningRates[randomNum];
+	System.out.println(" *** Margin Perceptron ***");
+	System.out.println(" ");
+
+	Double min =-0.01;  //  Set To Your Desired Min Value
+    Double max = 0.01;
+		double smallRandNumber = min + new Random().nextDouble() * (max - min); 
+		Arrays.fill(w, smallRandNumber);
+
+		
+	double tempAccuracy=0;	
 	
-	
-for(int i=0;i<LearningRates.length;i++)
-{
-LearningRate = LearningRates[i];
+ 
 double devAccuracyTotal = (double)0;
 int noOfEpochs= 20;
 int decreaseRate = 0;
-
-	Double w[] = new Double[20];
-	Double min =-0.01;  //  Set To Your Desired Min Value
-Double max = 0.01;
-		double smallRandNumber = min + new Random().nextDouble() * (max - min); 
-		Arrays.fill(w, smallRandNumber);
-		
 for(int epoch=0;epoch<noOfEpochs;epoch++)
 {
-	 	w = learnDecayingPerceptron(data,index,LearningRate,decreaseRate,w);
-	 	decreaseRate = decreaseRate + index;
+	 	w = learnMarginPerceptron(data,index,LearningRate,decreaseRate,w,Margin);
 
-}
-//    	for(int i=0;i<w.length;i++)
-//    			System.out.println(w[i]);
-//print data     	
-//   	for (Map.Entry<Integer, Double> entry : x.entrySet()) {
-//   System.out.println(""+entry.getKey() + " " + entry.getValue());
-//	      	}
  	      	
 	//keep decreaseRate increasing across epochs, by increasing 1 for each example.
-	double cvAccuracy = testTestFile(w,testFileName);
-	
-//	System.out.println("Epoch" + epoch +" Dev Accuracy for Decaying Learning Rate " + LearningRate + " is " + cvAccuracy);
+	// 	decreaseRate = decreaseRate + index;
+			decreaseRate = decreaseRate + 1;
 
-
-System.out.println("       ** Cv Accuracy for Decaying Learning Rate " + LearningRate + " is " + cvAccuracy);
-System.out.println(" ");
-}
-
-//double testAccuracy = testTestFile(w,testFileName);
-	//System.out.println("test Accuracy" + testAccuracy);
-}
-
-public static Double[] learnMarginPerceptron(Data data1[],int index,double LearningRate,int decreaseRate, Double w[],double margin)
+	double devAccuracy = testDev(w);
+	//store best weight to use on Test data.
+	if(devAccuracy>tempAccuracy)
 	{
-		 
+		bestW = w;
+		tempAccuracy = devAccuracy;
+	}
+	
+	devAccuracyTotal = devAccuracyTotal + devAccuracy;
+	System.out.println("   Epoch" + epoch +" Dev Accuracy for Margin " + Margin + "Learning Rate " + LearningRate + " is " + devAccuracy);
+}
+
+System.out.println("      ** Average Dev Accuracy for Margin " + Margin + "Learning Rate " + LearningRate + " is " + devAccuracyTotal/noOfEpochs);
+System.out.println(" ");
+//}
+
+double testAccuracy = testTest(bestW);
+System.out.println("      Test Accuracy - Margin   :" + testAccuracy);
+}
+
+public static Double[] learnMarginPerceptron(Data data1[],int index,double LearningRate,int decreaseRate, Double w[], double Margin)
+	{
 		
 		Data data[] = Arrays.copyOf(data1,index);
+			
 		
 		//shuffle the data..
 	 	ArrayList<Data> arrayList = new ArrayList<Data>(Arrays.asList(Arrays.copyOf(data,index))); 
 		Collections.shuffle(arrayList);
 		data = arrayList.toArray(new Data[arrayList.size()]);
-	  		
+	  	int totalUpdates = 0;	
+
 		for(int i=0;i<index;i++)
 		{
 			
-	//		int minInt1 =0;  //  Set To Your Desired Min Value
-	//	    int maxInt1 =index-1;
-		//    int i=0;
-	 	//	Random rand1= new Random();
-	 		
-	 //	 	i = rand1.nextInt((maxInt1 - minInt1) + 1) + minInt;
+
 			
 			//Decaying the learning rate
 			LearningRate = LearningRate/(1+decreaseRate);
-			decreaseRate++;
 			
 			double trueLabel;
 			double predictedLabel;
@@ -563,7 +563,7 @@ public static Double[] learnMarginPerceptron(Data data1[],int index,double Learn
 			}
 			
 			//predict the label
-			if(dotProduct_wT_x < margin)
+			if(dotProduct_wT_x < Margin)
 				predictedLabel = -1;
 			else	
 				predictedLabel = +1;
@@ -574,7 +574,8 @@ public static Double[] learnMarginPerceptron(Data data1[],int index,double Learn
 			{
 				//update bias
 				w[0]=w[0]+trueLabel*LearningRate;
-				
+				totalUpdates = totalUpdates + 1;
+
 				//update all other weights
 
 				for(int j=1;j<w.length;j++)
@@ -587,93 +588,80 @@ public static Double[] learnMarginPerceptron(Data data1[],int index,double Learn
 			}
 			
 		}
+		System.out.println("   Total Learning Updates in TrainingSet for Margin Learning Perceptron: " + totalUpdates);
 
 		return w;
 	}
 	
-public static double runAveragePerceptron(Data[] data, int index,String testFileName)
+// Average Perceptron:
+public static void runAveragePerceptron(Data[] data, int index, double LearningRate)
 {
 	 
-	 double LearningRates[] = {1, 0.1, 0.01};
-		HashMap<Double, Double> bestLearningRates = new HashMap<Double,Double>();
-	 
-		
- 	
-	 	double LearningRate; 
+	
 	 	
-for(int i=0;i<LearningRates.length;i++)
-{
 	Double w[] = new Double[20];
-	Double a[] = new Double[20];
-	Arrays.fill(a, (double)0);
+	Double bestW[] = new Double[20];
 	
 	Double min =-0.01;  //  Set To Your Desired Min Value
     Double max = 0.01;
 		double smallRandNumber = min + new Random().nextDouble() * (max - min); 
 		Arrays.fill(w, smallRandNumber);
-		
-		
-	 LearningRate = LearningRates[i];
-	 double testAccuracyTotal = (double)0;
-	 int noOfEpochs= 10;
- //** 	 System.out.println("       Learning Rate: " + LearningRate);
- 
+	 double tempAccuracy=0;	
+ 	 double devAccuracyTotal = (double)0;
+	 int noOfEpochs= 20;
+	 System.out.println(" ");
+	 System.out.println(" ");
+
+		System.out.println(" *** Average Perceptron ***");
+		System.out.println(" ");
+
 	 for(int epoch=0;epoch<noOfEpochs;epoch++)
 	 {
 	      	w = learnAveragePerceptron(data,index,LearningRate,w);
-	      	
-	 }
-	  //    	for(int i=0;i<w.length;i++)
-	  //    			System.out.println(w[i]);
-// print data     	
-//	      	for (Map.Entry<Integer, Double> entry : x.entrySet()) {
-//	      System.out.println(""+entry.getKey() + " " + entry.getValue());
-//		      	}
-	    	      	
-     	double testAccuracy = testTestFile(w,testFileName);
-     	
-    // 	testAccuracyTotal = testAccuracyTotal + testAccuracy;
-  //***   	System.out.println("           Epoch_" + epoch +" Test Accuracy for Simple Learning Rate " + LearningRate + " is " + testAccuracy);
-	 
-	 
-	// double Average = testAccuracyTotal/noOfEpochs;
-	 bestLearningRates.put(LearningRates[i],testAccuracy);
-
-	 System.out.println("       ** Test Accuracy for Average Learning Rate " + LearningRate + " is " + testAccuracy);
-	 System.out.println(" ");
-}
-
-//return best Learning Rate
-	double bestLearningRate = 0;
-	double bestLearningRateAccuracy = 0;
-
-for (Map.Entry<Double, Double> entry : bestLearningRates.entrySet()) {
-		if(entry.getValue() > bestLearningRateAccuracy)
-		{
-			bestLearningRate=entry.getKey();
-			bestLearningRateAccuracy = entry.getValue();
-		}
-	}
-	return bestLearningRate;
-
-//	double testAccuracy = testTest(w,testFileName);
- // 	System.out.println("test Accuracy" + testAccuracy);
-}
-
-
-public static Double[] learnAveragePerceptron(Data data1[],int index,double LearningRate,Double w[])
-	{
 	
-		Double a[] = new Double[20];
+	      	
+ 
+     	double devAccuracy = testDev(w);
+     	//store best weight to use on Test data.
+     	if(devAccuracy>tempAccuracy)
+     	{
+     		bestW = w;
+     		tempAccuracy = devAccuracy;
+     	}
+     	devAccuracyTotal = devAccuracyTotal + devAccuracy;
+     	System.out.println("   Epoch" + epoch +" Dev Accuracy for Average Learning Rate " + LearningRate + " is " + devAccuracy);
+     	
+		Arrays.fill(w, smallRandNumber);
+
+	 }
+	 
+	 System.out.println("      ** Average Dev Accuracy for Average Learning Rate " + LearningRate + " is " + devAccuracyTotal/noOfEpochs);
+	 System.out.println(" ");
+
+
+	double testAccuracy = testTest(bestW);
+	System.out.println("      Test Accuracy - Average   :" + testAccuracy);
+}
+
+public static Double[] learnAveragePerceptron(Data data1[],int index,double LearningRate, Double w[])
+	{
+		 
+		Double a[]=new Double[20];
 		Arrays.fill(a, (double)0);
 		Data data[] = Arrays.copyOf(data1,index);
+		
+ 
+		
 		
 		//shuffle the data..
 	 	ArrayList<Data> arrayList = new ArrayList<Data>(Arrays.asList(Arrays.copyOf(data,index))); 
 		Collections.shuffle(arrayList);
 		data = arrayList.toArray(new Data[arrayList.size()]);
+	  	int totalUpdates = 0;	
 		for(int i=0;i<index;i++)
 		{
+ 
+			
 			double trueLabel;
 			double predictedLabel;
 			double dotProduct_wT_x = 0.0f;
@@ -698,6 +686,7 @@ public static Double[] learnAveragePerceptron(Data data1[],int index,double Lear
 		//	if(dotProduct_wT_x<0)
 			{
 				//update bias
+				totalUpdates = totalUpdates + 1;
 				w[0]=w[0]+trueLabel*LearningRate;
 				
 				//update all other weights
@@ -711,88 +700,94 @@ public static Double[] learnAveragePerceptron(Data data1[],int index,double Lear
 				}
 			}
 			
+			// update average regardless if there was an update of not.
+			
 			for(int j=0;j<w.length;j++)
 			{
 				a[j]=a[j] + w[j];
 			}
 			
 		}
+		System.out.println("   Total Learning Updates in TrainingSet for Average Perceptron: " + totalUpdates);
+		
+		//return average
 		return a;
 	}
-
-public static void runAgressiveMarginPerceptron(Data[] data, int index,String testFileName)
-{
- int t=0;
- double LearningRates[] = {1, 0.1, 0.01};
- double Margins[] = {1, 0.1, 0.01};
-
-	int minInt =0;  //  Set To Your Desired Min Value
-    int maxInt =2;
-	Random rand = new Random();
 	
- 	int randomNum = rand.nextInt((maxInt - minInt) + 1) + minInt;
+// Average Margin Perceptron
 
- 	double LearningRate = LearningRates[randomNum];
- 	
-for(int m=0;m<LearningRates.length;m++)
+public static void runAgressiveMarginPerceptron(Data[] data, int index,  double Margin)
 {
-  // for(int i=0;i<LearningRates.length;i++)
- //   {
-	  // LearningRate = LearningRates[i];
-		 double devAccuracyTotal = (double)0;
-		 int noOfEpochs= 20;
-		 int decreaseRate = 0;
-		 
-   		 Double w[] = new Double[20];
-		 Double min =-0.01;  //  Set To Your Desired Min Value
-	     Double max = 0.01;
-	 		double smallRandNumber = min + new Random().nextDouble() * (max - min); 
-			Arrays.fill(w, smallRandNumber);
-			
-		 for(int epoch=0;epoch<noOfEpochs;epoch++)
-		 {
-			 	w = learnAgressiveMarginPerceptron(data,index,LearningRate,decreaseRate,w,Margins[m]);
-			 	decreaseRate = decreaseRate + index;
+int t=0;
+	Double w[] = new Double[20];
+	Double bestW[] = new Double[20];
+
+ 
+	Double min =-0.01;  //  Set To Your Desired Min Value
+    Double max = 0.01;
+		double smallRandNumber = min + new Random().nextDouble() * (max - min); 
+		Arrays.fill(w, smallRandNumber);
+		System.out.println(" ");
+		System.out.println(" ");
+
 		
-		 }
-		//CVSplit test
- 	double cvAccuracy = testTestFile(w,testFileName);
- 	
-//  	System.out.println("Epoch" + epoch +" Dev Accuracy for Decaying Learning Rate " + LearningRate + " is " + cvAccuracy);
+	double tempAccuracy=0;	
+	System.out.println(" *** Agressive Margin Perceptron ***");
+	System.out.println(" ");
+
  
- 
- 	System.out.println("       ** Cv Accuracy for Agressive Margin Rate" + Margins[m] + " Learning Rate " + LearningRate + " is " + cvAccuracy);
- 	System.out.println(" ");
- //}
+double devAccuracyTotal = (double)0;
+int noOfEpochs= 20;
+int decreaseRate = 0;
+for(int epoch=0;epoch<noOfEpochs;epoch++)
+{
+	 	w = learnAgressiveMarginPerceptron(data,index,decreaseRate,w,Margin);
+
+ 	      	
+	//keep decreaseRate increasing across epochs, by increasing 1 for each example.
+	// 	decreaseRate = decreaseRate + index;
+			decreaseRate = decreaseRate + 1;
+
+	double devAccuracy = testDev(w);
+	//store best weight to use on Test data.
+	if(devAccuracy>tempAccuracy)
+	{
+		bestW = w;
+		tempAccuracy = devAccuracy;
+	}
+	
+	devAccuracyTotal = devAccuracyTotal + devAccuracy;
+	System.out.println("   Epoch" + epoch +" Dev Accuracy for Aggressive Margin " + Margin  + " is " + devAccuracy);
 }
-//double testAccuracy = testTestFile(w,testFileName);
-	//System.out.println("test Accuracy" + testAccuracy);
+System.out.println(" ");
+
+System.out.println("      ** Average Dev Accuracy for Aggressive Margin " + Margin +  " is " + devAccuracyTotal/noOfEpochs);
+System.out.println(" ");
+//}
+
+double testAccuracy = testTest(bestW);
+	System.out.println("      Test Accuracy - Agressive Margin   :" + testAccuracy);
 }
 
-public static Double[] learnAgressiveMarginPerceptron(Data data1[],int index,double LearningRate,int decreaseRate, Double w[],double margin)
+public static Double[] learnAgressiveMarginPerceptron(Data data1[],int index,int decreaseRate, Double w[], double Margin)
 {
-	 
 	
 	Data data[] = Arrays.copyOf(data1,index);
+		
 	
 	//shuffle the data..
  	ArrayList<Data> arrayList = new ArrayList<Data>(Arrays.asList(Arrays.copyOf(data,index))); 
 	Collections.shuffle(arrayList);
 	data = arrayList.toArray(new Data[arrayList.size()]);
-  		
+  	int totalUpdates = 0;	
+
 	for(int i=0;i<index;i++)
 	{
 		
-//		int minInt1 =0;  //  Set To Your Desired Min Value
-//	    int maxInt1 =index-1;
-	//    int i=0;
- 	//	Random rand1= new Random();
- 		
- //	 	i = rand1.nextInt((maxInt1 - minInt1) + 1) + minInt;
+
 		
 		//Decaying the learning rate
-//		LearningRate = LearningRate/(1+decreaseRate);
-		decreaseRate++;
+	//	LearningRate = LearningRate/(1+decreaseRate);
 		
 		double trueLabel;
 		double predictedLabel;
@@ -808,25 +803,26 @@ public static Double[] learnAgressiveMarginPerceptron(Data data1[],int index,dou
 		}
 		
 		//predict the label
-		if(dotProduct_wT_x < margin)
+		if(dotProduct_wT_x < Margin)
 			predictedLabel = -1;
 		else	
 			predictedLabel = +1;
 		
 		// Learning Rate - Aggressive Margin
-				double dotProduct_xT_x=(double)0;
-				for (Map.Entry<Integer, Double> entry : x.entrySet()) {
-					 dotProduct_xT_x = dotProduct_xT_x +  entry.getValue() * entry.getValue();
-				} 
-				LearningRate = (margin - trueLabel*dotProduct_wT_x)/(dotProduct_xT_x + 1);
-				
+		double dotProduct_xT_x=(double)0;
+		for (Map.Entry<Integer, Double> entry : x.entrySet()) {
+			 dotProduct_xT_x = dotProduct_xT_x +  entry.getValue() * entry.getValue();
+		} 
+		double LearningRate = (Margin - trueLabel*dotProduct_wT_x)/(dotProduct_xT_x + 1);
+		
 		//check if prediction is correct, if not update the weight vector and bias.
 		if(predictedLabel != trueLabel)
 	//	if(dotProduct_wT_x<0)
 		{
 			//update bias
 			w[0]=w[0]+trueLabel*LearningRate;
-			
+			totalUpdates = totalUpdates + 1;
+
 			//update all other weights
 
 			for(int j=1;j<w.length;j++)
@@ -839,13 +835,12 @@ public static Double[] learnAgressiveMarginPerceptron(Data data1[],int index,dou
 		}
 		
 	}
+	System.out.println("   Total Learning Updates in TrainingSet for Agressive Margin Learning Perceptron: " + totalUpdates);
 
 	return w;
 }
 
-
 }
-
 
 
 	
